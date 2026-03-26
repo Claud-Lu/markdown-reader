@@ -268,14 +268,14 @@
       border-color: #0366d6;
     }
     
-    /* Fullscreen Mode */
+    /* Fullscreen Mode - PC: hide header, sidebar stays on left */
     body.fullscreen .header,
     body.fullscreen .theme-switcher {
       display: none;
     }
     
     body.fullscreen .main {
-      margin-left: 0;
+      margin-left: 280px;
       margin-top: 0;
       padding: 0;
       min-height: 100vh;
@@ -284,47 +284,55 @@
     body.fullscreen .markdown-body {
       max-width: none;
       margin: 0;
-      padding: 40px 320px 40px 40px;
+      padding: 40px;
       border: none;
       border-radius: 0;
       min-height: 100vh;
     }
     
-    /* Fullscreen TOC - Fixed right sidebar */
+    /* PC Fullscreen: sidebar stays on left */
     body.fullscreen .sidebar {
-      position: fixed;
       top: 0;
-      right: 0;
-      left: auto;
-      width: 280px;
       height: 100vh;
-      border-right: none;
-      border-left: 1px solid #e1e4e8;
-      background: rgba(255, 255, 255, 0.95);
-      z-index: 50;
-      padding: 20px 15px;
-      overflow-y: auto;
-      font-size: 13px;
     }
     
-    body.fullscreen .sidebar-title {
-      font-size: 11px;
-      padding: 0 5px;
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
     }
     
-    body.fullscreen .toc-list a {
-      font-size: 12px;
-      padding: 3px 5px;
-    }
-    
-    /* Mobile Fullscreen - Auto fullscreen on mobile */
     @media (max-width: 768px) {
-      body.mobile-fullscreen .header,
-      body.mobile-fullscreen .theme-switcher {
-        display: none;
+      .mobile-menu-btn {
+        display: flex;
+        position: fixed;
+        top: 70px;
+        left: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e1e4e8;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        z-index: 200;
+        transition: all 0.2s;
       }
       
-      body.mobile-fullscreen .sidebar {
+      .mobile-menu-btn:hover {
+        background: #f6f8fa;
+      }
+      
+      .mobile-menu-btn svg {
+        width: 20px;
+        height: 20px;
+        color: #586069;
+      }
+      
+      /* Mobile Fullscreen - Hide header, show menu button */
+      body.mobile-fullscreen .header,
+      body.mobile-fullscreen .theme-switcher {
         display: none;
       }
       
@@ -341,6 +349,29 @@
         border: none;
         border-radius: 0;
         min-height: 100vh;
+      }
+      
+      /* Mobile sidebar - hidden by default, shown when menu clicked */
+      body.mobile-fullscreen .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 260px;
+        height: 100vh;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 150;
+        background: #fff;
+        border-right: 1px solid #e1e4e8;
+        padding: 60px 15px 20px 15px;
+      }
+      
+      body.mobile-fullscreen.mobile-menu-open .sidebar {
+        transform: translateX(0);
+      }
+      
+      body.mobile-fullscreen.mobile-menu-open .mobile-menu-btn {
+        left: 270px;
       }
       
       body.mobile-fullscreen .fullscreen-btn {
@@ -414,26 +445,36 @@
     /* Responsive - Base mobile styles */
     @media (max-width: 768px) {
       .sidebar { display: none; }
-      .main { margin-left: 0; margin-top: 60px; padding: 15px; }
+      .main { 
+        margin-left: 0; 
+        margin-top: 0; 
+        padding: 60px 15px 15px 15px; 
+      }
       .header { 
         flex-wrap: wrap; 
         height: auto; 
         padding: 10px;
         position: fixed;
+        z-index: 100;
       }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
-      .fullscreen-btn { right: 20px; bottom: 80px; }
+      .fullscreen-btn { right: 20px; bottom: 20px; }
       .markdown-body { 
         padding: 20px; 
         max-width: 100%;
       }
       .theme-switcher {
-        bottom: 20px;
+        bottom: 80px;
         right: 20px;
       }
       .empty-state {
         margin: 20px auto;
         padding: 30px 20px;
+      }
+      
+      /* Mobile non-fullscreen: hide menu button */
+      body:not(.mobile-fullscreen) .mobile-menu-btn {
+        display: none !important;
       }
     }
   </style>
@@ -506,6 +547,15 @@
     <button class="theme-btn" style="background: #0d1117;" onclick="setTheme('dark')" title="Dark"></button>
   </div>
 
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()" title="目录">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </button>
+
   <!-- Fullscreen Toggle Button -->
   <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="全屏模式 (F11)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -528,6 +578,9 @@
       // Auto fullscreen on mobile
       if (isMobile) {
         document.body.classList.add('mobile-fullscreen');
+      } else {
+        // Hide mobile menu button on PC
+        document.getElementById('mobileMenuBtn').style.display = 'none';
       }
       
       // Check URL parameters
@@ -582,10 +635,13 @@
           // Switched to mobile
           document.body.classList.add('mobile-fullscreen');
           document.body.classList.add('mobile-resize-flag');
+          document.getElementById('mobileMenuBtn').style.display = 'flex';
         } else if (!nowMobile && wasMobile) {
           // Switched to PC
           document.body.classList.remove('mobile-fullscreen');
+          document.body.classList.remove('mobile-menu-open');
           document.body.classList.remove('mobile-resize-flag');
+          document.getElementById('mobileMenuBtn').style.display = 'none';
         }
       });
     });
@@ -630,11 +686,22 @@
     function enterMobileFullscreen() {
       document.body.classList.add('mobile-fullscreen');
       updateFullscreenButton(true);
+      // Show menu button in fullscreen
+      document.getElementById('mobileMenuBtn').style.display = 'flex';
     }
     
     function exitMobileFullscreen() {
       document.body.classList.remove('mobile-fullscreen');
+      document.body.classList.remove('mobile-menu-open');
       updateFullscreenButton(false);
+      // Hide menu button when not in fullscreen
+      if (window.innerWidth <= 768) {
+        document.getElementById('mobileMenuBtn').style.display = 'none';
+      }
+    }
+    
+    function toggleMobileMenu() {
+      document.body.classList.toggle('mobile-menu-open');
     }
     
     function updateFullscreenButton(isFullscreen) {
