@@ -599,7 +599,7 @@
 
   <!-- Mobile Top Bar (visible only in mobile fullscreen) -->
   <div class="mobile-top-bar" id="mobileTopBar">
-    <div class="mobile-top-bar-title">Markdown Reader</div>
+    <div class="mobile-top-bar-title" id="mobileTopBarTitle">📄 文档阅读</div>
   </div>
 
   <!-- Mobile Menu Button -->
@@ -913,6 +913,17 @@
       document.getElementById('content').innerHTML = clean;
       document.getElementById('content').style.display = 'block';
       
+      // Extract first H1 for mobile top bar title
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = clean;
+      const firstH1 = tempDiv.querySelector('h1');
+      if (firstH1) {
+        const titleText = firstH1.textContent.trim().substring(0, 20);
+        document.getElementById('mobileTopBarTitle').textContent = titleText + (firstH1.textContent.length > 20 ? '...' : '');
+      } else {
+        document.getElementById('mobileTopBarTitle').textContent = '📄 文档阅读';
+      }
+      
       // Generate TOC
       generateTOC();
       
@@ -985,6 +996,7 @@
       document.getElementById('error').style.display = 'none';
       document.getElementById('loading').style.display = 'none';
       document.getElementById('tocList').innerHTML = '';
+      document.getElementById('mobileTopBarTitle').textContent = '📄 文档阅读';
       history.pushState(null, '', window.location.pathname);
     }
     
