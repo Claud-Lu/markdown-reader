@@ -268,12 +268,93 @@
       border-color: #0366d6;
     }
     
+    /* Fullscreen Mode */
+    body.fullscreen .header,
+    body.fullscreen .sidebar,
+    body.fullscreen .theme-switcher {
+      display: none;
+    }
+    
+    body.fullscreen .main {
+      margin-left: 0;
+      margin-top: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    body.fullscreen .markdown-body {
+      max-width: 100%;
+      border: none;
+      border-radius: 0;
+    }
+    
+    body.fullscreen .empty-state,
+    body.fullscreen .loading,
+    body.fullscreen .error {
+      max-width: 800px;
+    }
+    
+    /* Fullscreen Toggle Button */
+    .fullscreen-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 70px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid #e1e4e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      transition: all 0.2s;
+    }
+    
+    .fullscreen-btn:hover {
+      background: #f6f8fa;
+      transform: scale(1.1);
+    }
+    
+    .fullscreen-btn svg {
+      width: 20px;
+      height: 20px;
+      color: #586069;
+    }
+    
+    /* Exit fullscreen hint */
+    .exit-hint {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    body.fullscreen .exit-hint {
+      opacity: 1;
+    }
+    
+    body.fullscreen .exit-hint:hover {
+      opacity: 0;
+    }
+    
     /* Responsive */
     @media (max-width: 768px) {
       .sidebar { display: none; }
       .main { margin-left: 0; padding: 20px; }
       .header { flex-wrap: wrap; height: auto; padding: 10px; }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
+      .fullscreen-btn { right: 20px; }
     }
   </style>
 </head>
@@ -345,18 +426,39 @@
     <button class="theme-btn" style="background: #0d1117;" onclick="setTheme('dark')" title="Dark"></button>
   </div>
 
+  <!-- Fullscreen Toggle Button -->
+  <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="全屏模式 (F11)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
+  </button>
+
+  <!-- Exit Fullscreen Hint -->
+  <div class="exit-hint" id="exitHint">按 ESC 或点击此按钮退出全屏</div>
+
   <script>
     // Configuration
     const WORKER_URL = '/proxy'; // Worker API endpoint (same domain)
     
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      // Check URL parameter
+      // Check URL parameters
       const params = new URLSearchParams(window.location.search);
       const url = params.get('url');
+      const fullscreen = params.get('fullscreen') === '1' || params.has('fullscreen');
+      
+      // Auto load if URL provided
       if (url) {
         document.getElementById('urlInput').value = url;
-        loadMarkdown(url);
+        loadMarkdown(url).then(() => {
+          // Auto enter fullscreen if requested
+          if (fullscreen) {
+            setTimeout(() => enterFullscreen(), 500);
+          }
+        });
+      } else if (fullscreen) {
+        // Show empty state with fullscreen hint
+        enterFullscreen();
       }
       
       // Setup file inputs
@@ -364,7 +466,65 @@
       setupFileInput('dropFileInput');
       setupDropZone();
       setupPasteArea();
+      
+      // Setup fullscreen keyboard shortcut
+      document.addEventListener('keydown', (e) => {
+        // ESC to exit fullscreen
+        if (e.key === 'Escape' && document.body.classList.contains('fullscreen')) {
+          exitFullscreen();
+        }
+        // F11 to toggle fullscreen
+        if (e.key === 'F11') {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      });
     });
+    
+    // Fullscreen functions
+    function toggleFullscreen() {
+      if (document.body.classList.contains('fullscreen')) {
+        exitFullscreen();
+      } else {
+        enterFullscreen();
+      }
+    }
+    
+    function enterFullscreen() {
+      document.body.classList.add('fullscreen');
+      // Update button icon to exit icon
+      document.getElementById('fullscreenBtn').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+        </svg>
+      `;
+      document.getElementById('fullscreenBtn').title = '退出全屏 (ESC)';
+      
+      // Auto hide hint after 3 seconds
+      setTimeout(() => {
+        document.getElementById('exitHint').style.opacity = '0';
+      }, 3000);
+    }
+    
+    function exitFullscreen() {
+      document.body.classList.remove('fullscreen');
+      // Update button icon to enter icon
+      document.getElementById('fullscreenBtn').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      `;
+      document.getElementById('fullscreenBtn').title = '全屏模式 (F11)';
+      document.getElementById('exitHint').style.opacity = '';
+    }
+    
+    // Get shareable fullscreen link
+    function getFullscreenLink() {
+      const currentUrl = document.getElementById('urlInput').value;
+      if (!currentUrl) return null;
+      const baseUrl = window.location.origin + window.location.pathname;
+      return `${baseUrl}?url=${encodeURIComponent(currentUrl)}&fullscreen=1`;
+    }
     
     // Load from URL input
     function loadFromUrl() {
