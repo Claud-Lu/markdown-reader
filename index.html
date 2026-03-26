@@ -488,14 +488,16 @@
       .sidebar { display: none; }
       .main { 
         margin-left: 0; 
-        margin-top: 0; 
-        padding: 60px 15px 15px 15px; 
+        margin-top: 110px; 
+        padding: 15px; 
       }
       .header { 
         flex-wrap: wrap; 
         height: auto; 
+        min-height: 60px;
         padding: 10px;
         position: fixed;
+        top: 0;
         z-index: 100;
       }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
@@ -513,9 +515,16 @@
         padding: 30px 20px;
       }
       
-      /* Mobile non-fullscreen: hide menu button */
-      body:not(.mobile-fullscreen) .mobile-menu-btn {
+      /* Mobile non-fullscreen: hide menu button and top bar */
+      body:not(.mobile-fullscreen) .mobile-menu-btn,
+      body:not(.mobile-fullscreen) .mobile-top-bar {
         display: none !important;
+      }
+      
+      /* Mobile fullscreen: adjust main padding */
+      body.mobile-fullscreen .main {
+        margin-top: 0;
+        padding-top: 50px;
       }
     }
   </style>
