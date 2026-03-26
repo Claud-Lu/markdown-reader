@@ -296,6 +296,11 @@
       height: 100vh;
     }
     
+    /* Mobile Top Bar - hidden by default */
+    .mobile-top-bar {
+      display: none;
+    }
+    
     /* Mobile Menu Button */
     .mobile-menu-btn {
       display: none;
@@ -351,23 +356,56 @@
         min-height: 100vh;
       }
       
-      /* Mobile sidebar - hidden by default, shown when menu clicked */
-      body.mobile-fullscreen .sidebar {
+      /* Mobile top bar in fullscreen */
+      body.mobile-fullscreen .mobile-top-bar {
+        display: flex;
         position: fixed;
         top: 0;
         left: 0;
+        right: 0;
+        height: 50px;
+        background: #fff;
+        border-bottom: 1px solid #e1e4e8;
+        align-items: center;
+        justify-content: center;
+        z-index: 140;
+        padding: 0 60px;
+      }
+      
+      body.mobile-fullscreen .mobile-top-bar-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #24292e;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Mobile sidebar - hidden by default, shown when menu clicked */
+      body.mobile-fullscreen .sidebar {
+        display: block;
+        position: fixed;
+        top: 50px;
+        left: 0;
         width: 260px;
-        height: 100vh;
+        height: calc(100vh - 50px);
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 150;
         background: #fff;
         border-right: 1px solid #e1e4e8;
-        padding: 60px 15px 20px 15px;
+        padding: 20px 15px;
       }
       
       body.mobile-fullscreen.mobile-menu-open .sidebar {
         transform: translateX(0);
+      }
+      
+      body.mobile-fullscreen .mobile-menu-btn {
+        top: 5px;
+        left: 10px;
+        z-index: 160;
       }
       
       body.mobile-fullscreen.mobile-menu-open .mobile-menu-btn {
@@ -379,7 +417,10 @@
         right: 20px;
         background: rgba(255, 255, 255, 0.9);
       }
-    }
+      
+      body.mobile-fullscreen .main {
+        padding-top: 50px;
+      }
     
     body.fullscreen .empty-state,
     body.fullscreen .loading,
@@ -545,6 +586,11 @@
   <div class="theme-switcher">
     <button class="theme-btn active" style="background: #fff;" onclick="setTheme('light')" title="Light"></button>
     <button class="theme-btn" style="background: #0d1117;" onclick="setTheme('dark')" title="Dark"></button>
+  </div>
+
+  <!-- Mobile Top Bar (visible only in mobile fullscreen) -->
+  <div class="mobile-top-bar" id="mobileTopBar">
+    <div class="mobile-top-bar-title">Markdown Reader</div>
   </div>
 
   <!-- Mobile Menu Button -->
@@ -894,9 +940,18 @@
         
         const li = document.createElement('li');
         li.className = heading.tagName === 'H3' ? 'level-3' : '';
-        li.innerHTML = `<a href="#${id}" onclick="event.preventDefault(); document.getElementById('${id}').scrollIntoView({behavior: 'smooth'})">${heading.textContent}</a>`;
+        li.innerHTML = `<a href="#${id}" onclick="event.preventDefault(); scrollToHeading('${id}')">${heading.textContent}</a>`;
         tocList.appendChild(li);
       });
+    }
+    
+    // Scroll to heading and close mobile menu
+    function scrollToHeading(id) {
+      document.getElementById(id).scrollIntoView({behavior: 'smooth'});
+      // Close mobile menu if open
+      if (document.body.classList.contains('mobile-menu-open')) {
+        document.body.classList.remove('mobile-menu-open');
+      }
     }
     
     // UI States
