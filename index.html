@@ -369,7 +369,7 @@
         align-items: center;
         justify-content: center;
         z-index: 140;
-        padding: 0 60px;
+        padding: 0 50px 0 60px;
       }
       
       body.mobile-fullscreen .mobile-top-bar-title {
@@ -382,6 +382,13 @@
         text-overflow: ellipsis;
       }
       
+      body.mobile-fullscreen .mobile-menu-btn {
+        top: 5px;
+        left: 10px;
+        z-index: 200;
+        background: rgba(255, 255, 255, 0.95);
+      }
+      
       /* Mobile sidebar - hidden by default, shown when menu clicked */
       body.mobile-fullscreen .sidebar {
         display: block;
@@ -392,7 +399,7 @@
         height: calc(100vh - 50px);
         transform: translateX(-100%);
         transition: transform 0.3s ease;
-        z-index: 150;
+        z-index: 130;
         background: #fff;
         border-right: 1px solid #e1e4e8;
         padding: 20px 15px;
@@ -408,14 +415,15 @@
         z-index: 160;
       }
       
-      body.mobile-fullscreen.mobile-menu-open .mobile-menu-btn {
-        left: 270px;
-      }
-      
       body.mobile-fullscreen .fullscreen-btn {
         bottom: 20px;
         right: 20px;
         background: rgba(255, 255, 255, 0.9);
+      }
+      
+      /* Hide theme switcher in mobile fullscreen */
+      body.mobile-fullscreen .theme-switcher {
+        display: none;
       }
       
       body.mobile-fullscreen .main {
