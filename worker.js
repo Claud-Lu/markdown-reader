@@ -1,13 +1,17 @@
 /**
- * Markdown Reader - Cloudflare Worker Proxy
+ * Markdown Reader - Cloudflare Worker (Full Stack)
  * 
- * This worker acts as a CORS proxy to fetch markdown files from any URL.
- * Deploy this to Cloudflare Workers and set your custom domain.
+ * 同时提供：
+ * 1. 静态页面服务 (GET /)
+ * 2. CORS 代理 API (GET /proxy?url=xxx)
  * 
+ * Deploy: wrangler deploy
  * @license MIT
  */
 
-// CORS headers to allow cross-origin requests
+import HTML_CONTENT from "./index.html";
+
+// CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
@@ -16,107 +20,101 @@ const corsHeaders = {
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
 
-    const url = new URL(request.url);
-    
-    // Health check endpoint
-    if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // API: Proxy endpoint
+    if (path === '/proxy' || path.startsWith('/proxy/')) {
+      return handleProxy(url, env);
     }
 
-    // Get target URL from query parameter
-    const targetUrl = url.searchParams.get('url');
-    
-    if (!targetUrl) {
-      return new Response(
-        JSON.stringify({ error: 'Missing "url" query parameter' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    // API: Health check
+    if (path === '/health') {
+      return jsonResponse({ status: 'ok', version: '1.0.0' });
     }
 
-    // Validate URL
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(targetUrl);
-      // Only allow http and https protocols
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Invalid protocol');
-      }
-    } catch (e) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid URL provided' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Optional: Add rate limiting or domain whitelist here
-    // const allowedDomains = env.ALLOWED_DOMAINS?.split(',') || [];
-    // if (allowedDomains.length > 0 && !allowedDomains.includes(parsedUrl.hostname)) {
-    //   return new Response(
-    //     JSON.stringify({ error: 'Domain not allowed' }),
-    //     { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }}
-    //   );
-    // }
-
-    try {
-      // Fetch the target URL
-      const response = await fetch(targetUrl, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; MarkdownReader/1.0)',
-        },
-      });
-
-      if (!response.ok) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Failed to fetch target URL',
-            status: response.status,
-            statusText: response.statusText 
-          }),
-          { 
-            status: 502, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      // Get the response body
-      const body = await response.text();
-
-      // Return with CORS headers
-      return new Response(body, {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
-        },
-      });
-
-    } catch (error) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to fetch content',
-          message: error.message 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Static: Serve HTML page
+    return new Response(HTML_CONTENT, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
   },
 };
+
+// Handle proxy requests
+async function handleProxy(url, env) {
+  const targetUrl = url.searchParams.get('url');
+  
+  if (!targetUrl) {
+    return jsonResponse({ error: 'Missing "url" query parameter' }, 400);
+  }
+
+  // Validate URL
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(targetUrl);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+  } catch (e) {
+    return jsonResponse({ error: 'Invalid URL provided' }, 400);
+  }
+
+  // Optional: Domain whitelist
+  // const allowedDomains = env.ALLOWED_DOMAINS?.split(',') || [];
+  // if (allowedDomains.length > 0 && !allowedDomains.includes(parsedUrl.hostname)) {
+  //   return jsonResponse({ error: 'Domain not allowed' }, 403);
+  // }
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MarkdownReader/1.0)',
+      },
+    });
+
+    if (!response.ok) {
+      return jsonResponse({
+        error: 'Failed to fetch target URL',
+        status: response.status,
+        statusText: response.statusText
+      }, 502);
+    }
+
+    const body = await response.text();
+
+    return new Response(body, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'public, max-age=300',
+      },
+    });
+
+  } catch (error) {
+    return jsonResponse({
+      error: 'Failed to fetch content',
+      message: error.message
+    }, 500);
+  }
+}
+
+// Helper: JSON response
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+    },
+  });
+}

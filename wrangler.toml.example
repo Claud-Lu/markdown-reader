@@ -1,23 +1,23 @@
-# Cloudflare Workers Configuration Template
+# Cloudflare Workers Configuration
 # 
-# 1. Copy this file to wrangler.toml
-# 2. Replace the values below with your own
-# 3. Run: wrangler deploy
+# 1. Copy this file: cp wrangler.toml.example wrangler.toml
+# 2. Replace YOUR_DOMAIN with your actual domain
+# 3. Deploy: wrangler deploy
 
 name = "markdown-reader"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-# Optional: Configure custom domain
-# routes = [
-#   { pattern = "markdown.chathappy.cn", custom_domain = true }
-# ]
+# Custom domain (change to your domain)
+routes = [
+  { pattern = "markdown.chathappy.cn/*", custom_domain = true }
+]
 
-# Optional: Environment variables
+# Optional: Configure allowed domains for proxy
 # [vars]
 # ALLOWED_DOMAINS = "github.com,raw.githubusercontent.com,gitee.com"
 
-# Optional: KV Namespace for caching
+# Optional: KV for caching
 # [[kv_namespaces]]
 # binding = "CACHE"
 # id = "your-kv-namespace-id"
