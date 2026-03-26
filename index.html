@@ -387,34 +387,25 @@
       try {
         let text;
         
-        // Check if URL is HTTP (not HTTPS)
-        const isHttp = url.startsWith('http://');
-        const isHttps = url.startsWith('https://');
-        
-        // For HTTPS URLs, try direct fetch first (CORS-enabled sources)
-        if (isHttps) {
-          try {
-            const directRes = await fetch(url);
-            if (directRes.ok) {
-              text = await directRes.text();
-            }
-          } catch (e) {
-            // Direct fetch failed, will try worker proxy
+        // Try direct fetch first (works with CORS-enabled sources)
+        try {
+          const directRes = await fetch(url);
+          if (directRes.ok) {
+            text = await directRes.text();
           }
+        } catch (e) {
+          // Direct fetch failed, try worker proxy
         }
         
-        // For HTTP URLs or if direct fetch failed, use worker proxy
+        // If worker is configured and direct failed, use worker proxy
         if (!text && WORKER_URL) {
           const workerRes = await fetch(`${WORKER_URL}?url=${encodeURIComponent(url)}`);
-          if (!workerRes.ok) {
-            const errData = await workerRes.json().catch(() => ({}));
-            throw new Error(errData.error || 'Worker proxy failed');
-          }
+          if (!workerRes.ok) throw new Error('Worker proxy failed');
           text = await workerRes.text();
         }
         
         if (!text) {
-          throw new Error('无法获取内容。目标站点可能不允许跨域访问。');
+          throw new Error('无法获取内容。目标站点可能不允许跨域访问，请配置 Worker 代理。');
         }
         
         renderMarkdown(text);
