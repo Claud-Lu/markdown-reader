@@ -320,8 +320,7 @@
     /* Mobile Fullscreen - Auto fullscreen on mobile */
     @media (max-width: 768px) {
       body.mobile-fullscreen .header,
-      body.mobile-fullscreen .theme-switcher,
-      body.mobile-fullscreen .fullscreen-btn {
+      body.mobile-fullscreen .theme-switcher {
         display: none;
       }
       
@@ -342,6 +341,12 @@
         border: none;
         border-radius: 0;
         min-height: 100vh;
+      }
+      
+      body.mobile-fullscreen .fullscreen-btn {
+        bottom: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
       }
     }
     
