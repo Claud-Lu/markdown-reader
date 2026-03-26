@@ -270,7 +270,6 @@
     
     /* Fullscreen Mode */
     body.fullscreen .header,
-    body.fullscreen .sidebar,
     body.fullscreen .theme-switcher {
       display: none;
     }
@@ -278,20 +277,51 @@
     body.fullscreen .main {
       margin-left: 0;
       margin-top: 0;
-      padding: 20px;
+      padding: 0;
       min-height: 100vh;
     }
     
     body.fullscreen .markdown-body {
-      max-width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 40px 320px 40px 40px;
       border: none;
       border-radius: 0;
+      min-height: 100vh;
+    }
+    
+    /* Fullscreen TOC - Fixed right sidebar */
+    body.fullscreen .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: auto;
+      width: 280px;
+      height: 100vh;
+      border-right: none;
+      border-left: 1px solid #e1e4e8;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 50;
+      padding: 20px 15px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    
+    body.fullscreen .sidebar-title {
+      font-size: 11px;
+      padding: 0 5px;
+    }
+    
+    body.fullscreen .toc-list a {
+      font-size: 12px;
+      padding: 3px 5px;
     }
     
     body.fullscreen .empty-state,
     body.fullscreen .loading,
     body.fullscreen .error {
       max-width: 800px;
+      margin: 50px auto;
     }
     
     /* Fullscreen Toggle Button */
