@@ -317,6 +317,34 @@
       padding: 3px 5px;
     }
     
+    /* Mobile Fullscreen - Auto fullscreen on mobile */
+    @media (max-width: 768px) {
+      body.mobile-fullscreen .header,
+      body.mobile-fullscreen .theme-switcher,
+      body.mobile-fullscreen .fullscreen-btn {
+        display: none;
+      }
+      
+      body.mobile-fullscreen .sidebar {
+        display: none;
+      }
+      
+      body.mobile-fullscreen .main {
+        margin-left: 0;
+        margin-top: 0;
+        padding: 0;
+      }
+      
+      body.mobile-fullscreen .markdown-body {
+        max-width: none;
+        margin: 0;
+        padding: 20px;
+        border: none;
+        border-radius: 0;
+        min-height: 100vh;
+      }
+    }
+    
     body.fullscreen .empty-state,
     body.fullscreen .loading,
     body.fullscreen .error {
@@ -378,13 +406,30 @@
       opacity: 0;
     }
     
-    /* Responsive */
+    /* Responsive - Base mobile styles */
     @media (max-width: 768px) {
       .sidebar { display: none; }
-      .main { margin-left: 0; padding: 20px; }
-      .header { flex-wrap: wrap; height: auto; padding: 10px; }
+      .main { margin-left: 0; margin-top: 60px; padding: 15px; }
+      .header { 
+        flex-wrap: wrap; 
+        height: auto; 
+        padding: 10px;
+        position: fixed;
+      }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
-      .fullscreen-btn { right: 20px; }
+      .fullscreen-btn { right: 20px; bottom: 80px; }
+      .markdown-body { 
+        padding: 20px; 
+        max-width: 100%;
+      }
+      .theme-switcher {
+        bottom: 20px;
+        right: 20px;
+      }
+      .empty-state {
+        margin: 20px auto;
+        padding: 30px 20px;
+      }
     }
   </style>
 </head>
@@ -472,6 +517,14 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+      // Check if mobile device
+      const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Auto fullscreen on mobile
+      if (isMobile) {
+        document.body.classList.add('mobile-fullscreen');
+      }
+      
       // Check URL parameters
       const params = new URLSearchParams(window.location.search);
       const url = params.get('url');
@@ -481,13 +534,13 @@
       if (url) {
         document.getElementById('urlInput').value = url;
         loadMarkdown(url).then(() => {
-          // Auto enter fullscreen if requested
-          if (fullscreen) {
+          // Auto enter fullscreen if requested (PC only)
+          if (fullscreen && !isMobile) {
             setTimeout(() => enterFullscreen(), 500);
           }
         });
-      } else if (fullscreen) {
-        // Show empty state with fullscreen hint
+      } else if (fullscreen && !isMobile) {
+        // Show empty state with fullscreen hint (PC only)
         enterFullscreen();
       }
       
@@ -507,6 +560,16 @@
         if (e.key === 'F11') {
           e.preventDefault();
           toggleFullscreen();
+        }
+      });
+      
+      // Handle resize - toggle mobile fullscreen
+      window.addEventListener('resize', () => {
+        const nowMobile = window.innerWidth <= 768;
+        if (nowMobile) {
+          document.body.classList.add('mobile-fullscreen');
+        } else {
+          document.body.classList.remove('mobile-fullscreen');
         }
       });
     });
