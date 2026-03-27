@@ -12,6 +12,11 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
+    button {
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: #f6f8fa;
@@ -432,6 +437,11 @@
       
       /* Mobile History Sidebar */
       .mobile-history-sidebar {
+        display: none;
+      }
+      
+      body.mobile-fullscreen .mobile-history-sidebar,
+      body.mobile-history-open .mobile-history-sidebar {
         display: block;
         position: fixed;
         top: 50px;
@@ -1121,10 +1131,21 @@
     
     // History UI functions
     function toggleHistory() {
-      const dropdown = document.getElementById('historyDropdown');
-      const isHidden = dropdown.style.display === 'none';
-      dropdown.style.display = isHidden ? 'block' : 'none';
-      if (isHidden) renderHistoryList();
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        // 移动端使用侧边栏
+        document.body.classList.remove('mobile-menu-open');
+        document.body.classList.toggle('mobile-history-open');
+        if (document.body.classList.contains('mobile-history-open')) {
+          renderMobileHistoryList();
+        }
+      } else {
+        // PC端使用下拉框
+        const dropdown = document.getElementById('historyDropdown');
+        const isHidden = dropdown.style.display === 'none';
+        dropdown.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) renderHistoryList();
+      }
     }
     
     function renderHistoryList() {
@@ -1150,9 +1171,7 @@
     
     function loadFromHistory(encodedUrl) {
       const url = decodeURIComponent(encodedUrl);
-      document.getElementById('urlInput').value = url;
-      document.getElementById('historyDropdown').style.display = 'none';
-      loadMarkdown(url);
+      window.location.href = '?url=' + encodeURIComponent(url);
     }
     
     function removeHistory(encodedUrl) {
@@ -1201,9 +1220,7 @@
     
     function loadFromMobileHistory(encodedUrl) {
       const url = decodeURIComponent(encodedUrl);
-      document.getElementById('urlInput').value = url;
-      document.body.classList.remove('mobile-history-open');
-      loadMarkdown(url);
+      window.location.href = '?url=' + encodeURIComponent(url);
     }
     
     function removeMobileHistory(encodedUrl) {
