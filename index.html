@@ -510,7 +510,7 @@
       }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
       .fullscreen-btn { right: 20px; bottom: 20px; }
-      #historyDropdown { width: calc(100vw - 40px); right: -60px; }
+      #historyDropdown { width: calc(100vw - 40px); right: 10px !important; top: 55px !important; position: fixed; }
       .markdown-body { 
         padding: 20px; 
         max-width: 100%;
@@ -624,6 +624,12 @@
   <!-- Mobile Top Bar (visible only in mobile fullscreen) -->
   <div class="mobile-top-bar" id="mobileTopBar">
     <div class="mobile-top-bar-title" id="mobileTopBarTitle">📄 文档阅读</div>
+    <button onclick="toggleHistory()" style="position:absolute;right:10px;border:none;background:none;cursor:pointer;padding:8px;" title="访问历史">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#586069;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </button>
   </div>
 
   <!-- Mobile Menu Button -->
