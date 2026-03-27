@@ -510,6 +510,7 @@
       }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
       .fullscreen-btn { right: 20px; bottom: 20px; }
+      #historyDropdown { width: calc(100vw - 40px); right: -60px; }
       .markdown-body { 
         padding: 20px; 
         max-width: 100%;
@@ -554,6 +555,21 @@
     <button class="btn" onclick="loadFromUrl()">读取</button>
     <button class="btn" onclick="document.getElementById('fileInput').click()">上传文件</button>
     <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
+    <div style="position:relative;">
+      <button class="btn" id="historyBtn" onclick="toggleHistory()" title="访问历史">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </button>
+      <div id="historyDropdown" style="display:none;position:absolute;right:0;top:45px;width:350px;max-height:400px;background:#fff;border:1px solid #e1e4e8;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);overflow:hidden;z-index:200;">
+        <div style="padding:12px;border-bottom:1px solid #e1e4e8;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;font-size:14px;">访问历史</span>
+          <button onclick="HistoryManager.clear();renderHistoryList();" style="border:none;background:none;color:#cb2431;cursor:pointer;font-size:12px;">清空</button>
+        </div>
+        <div id="historyList" style="max-height:340px;overflow-y:auto;"></div>
+      </div>
+    </div>
   </header>
 
   <!-- Sidebar -->
@@ -632,6 +648,28 @@
   <script>
     // Configuration
     const WORKER_URL = '/proxy'; // Worker API endpoint (same domain)
+    
+    // History Manager
+    const HistoryManager = {
+      KEY: 'md-reader-history',
+      MAX: 20,
+      getAll() {
+        try { return JSON.parse(localStorage.getItem(this.KEY)) || []; }
+        catch { return []; }
+      },
+      add(url, title) {
+        if (!url) return;
+        let list = this.getAll().filter(item => item.url !== url);
+        list.unshift({ url, title: title || url, time: Date.now() });
+        if (list.length > this.MAX) list = list.slice(0, this.MAX);
+        localStorage.setItem(this.KEY, JSON.stringify(list));
+      },
+      remove(url) {
+        const list = this.getAll().filter(item => item.url !== url);
+        localStorage.setItem(this.KEY, JSON.stringify(list));
+      },
+      clear() { localStorage.removeItem(this.KEY); }
+    };
     
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
@@ -946,6 +984,12 @@
         history.pushState(null, '', `?url=${encodeURIComponent(currentUrl)}`);
       }
       
+      // Save to history
+      if (currentUrl) {
+        const title = firstH1 ? firstH1.textContent.trim().substring(0, 30) : currentUrl;
+        HistoryManager.add(currentUrl, title);
+      }
+      
       // Scroll to top
       window.scrollTo(0, 0);
     }
@@ -1036,6 +1080,56 @@
           e.preventDefault();
           document.getElementById('urlInput').focus();
         }
+      }
+    });
+    
+    // History UI functions
+    function toggleHistory() {
+      const dropdown = document.getElementById('historyDropdown');
+      const isHidden = dropdown.style.display === 'none';
+      dropdown.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) renderHistoryList();
+    }
+    
+    function renderHistoryList() {
+      const list = HistoryManager.getAll();
+      const container = document.getElementById('historyList');
+      if (list.length === 0) {
+        container.innerHTML = '<div style="padding:30px;text-align:center;color:#6a737d;font-size:13px;">暂无访问历史</div>';
+        return;
+      }
+      container.innerHTML = list.map(item => `
+        <div style="padding:10px 12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;cursor:pointer;"
+             onmouseover="this.style.background='#f6f8fa'" onmouseout="this.style.background=''"
+             onclick="loadFromHistory('${encodeURIComponent(item.url)}')">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;color:#24292e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title}</div>
+            <div style="font-size:11px;color:#6a737d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.url}</div>
+          </div>
+          <button onclick="event.stopPropagation();removeHistory('${encodeURIComponent(item.url)}')"
+                  style="border:none;background:none;color:#6a737d;cursor:pointer;padding:4px;" title="删除">×</button>
+        </div>
+      `).join('');
+    }
+    
+    function loadFromHistory(encodedUrl) {
+      const url = decodeURIComponent(encodedUrl);
+      document.getElementById('urlInput').value = url;
+      document.getElementById('historyDropdown').style.display = 'none';
+      loadMarkdown(url);
+    }
+    
+    function removeHistory(encodedUrl) {
+      const url = decodeURIComponent(encodedUrl);
+      HistoryManager.remove(url);
+      renderHistoryList();
+    }
+    
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('historyDropdown');
+      const btn = document.getElementById('historyBtn');
+      if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.style.display = 'none';
       }
     });
   </script>
