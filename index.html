@@ -539,7 +539,7 @@
       }
       .url-input { order: 3; width: 100%; max-width: none; margin-top: 10px; }
       .fullscreen-btn { right: 20px; bottom: 20px; }
-      #historyDropdown { width: calc(100vw - 40px); right: 10px !important; top: 55px !important; position: fixed; }
+      #historyDropdown { width: calc(100vw - 20px); left: 10px !important; right: 10px !important; top: 105px !important; position: fixed; }
       .markdown-body { 
         padding: 20px; 
         max-width: 100%;
@@ -1132,15 +1132,17 @@
     // History UI functions
     function toggleHistory() {
       const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
-        // 移动端使用侧边栏
+      const isMobileFullscreen = document.body.classList.contains('mobile-fullscreen');
+      
+      if (isMobile && isMobileFullscreen) {
+        // 移动端全屏模式使用侧边栏
         document.body.classList.remove('mobile-menu-open');
         document.body.classList.toggle('mobile-history-open');
         if (document.body.classList.contains('mobile-history-open')) {
           renderMobileHistoryList();
         }
       } else {
-        // PC端使用下拉框
+        // PC端和移动端非全屏使用下拉框
         const dropdown = document.getElementById('historyDropdown');
         const isHidden = dropdown.style.display === 'none';
         dropdown.style.display = isHidden ? 'block' : 'none';
