@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script defer src="https://ops.chathappy.cn/sdk.js" data-project="markdown-reader"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -581,8 +582,8 @@
       Markdown Reader
     </div>
     <input type="text" class="url-input" id="urlInput" placeholder="输入 Markdown URL...">
-    <button class="btn" onclick="loadFromUrl()">读取</button>
-    <button class="btn" onclick="document.getElementById('fileInput').click()">上传文件</button>
+    <button class="btn" data-ops-event="read_url" onclick="loadFromUrl()">读取</button>
+    <button class="btn" data-ops-event="upload_markdown" onclick="document.getElementById('fileInput').click()">上传文件</button>
     <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
     <div style="position:relative;">
       <button class="btn" id="historyBtn" onclick="toggleHistory()" title="访问历史">
@@ -615,7 +616,7 @@
       
       <div class="input-group">
         <input type="text" id="mainUrlInput" placeholder="https://example.com/readme.md">
-        <button class="btn btn-primary" onclick="loadFromMainInput()">读取</button>
+        <button class="btn btn-primary" data-ops-event="read_url" onclick="loadFromMainInput()">读取</button>
       </div>
       
       <div class="drop-zone" id="dropZone">
@@ -626,7 +627,7 @@
       <div style="margin-top: 30px;">
         <p style="color: #6a737d; font-size: 13px; margin-bottom: 10px;">或直接粘贴 Markdown：</p>
         <textarea id="pasteArea" style="width: 100%; height: 120px; padding: 12px; border: 1px solid #e1e4e8; border-radius: 8px; resize: vertical; font-family: monospace;" placeholder="在此粘贴 Markdown 内容..."></textarea>
-        <button class="btn btn-primary" style="margin-top: 10px;" onclick="loadFromPaste()">渲染</button>
+        <button class="btn btn-primary" data-ops-event="render_paste" style="margin-top: 10px;" onclick="loadFromPaste()">渲染</button>
       </div>
     </div>
     
