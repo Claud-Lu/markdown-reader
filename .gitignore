@@ -1,6 +1,17 @@
 # Sensitive configs
 .dev.vars
 wrangler.toml
+.env
+.env.*
+!.env.example
+.dev.vars.*
+.wrangler/
+dist/
+coverage/
+test-results/
+playwright-report/
+*.local.*
+private/
 
 # Node modules
 node_modules/
@@ -18,3 +29,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Deployment-only release scanning rules
+.release-private-patterns

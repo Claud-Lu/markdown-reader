@@ -1,159 +1,114 @@
-# 📖 Markdown Reader
+# Markdown Reader
 
-一个简洁、美观的 Markdown 在线阅读器，基于 Cloudflare Workers 全栈部署。
+A lightweight, open-source Markdown reader. Paste text, open a local file, or read a public document URL. Built with vanilla JavaScript, Vite and Cloudflare Workers.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Cloudflare Workers](https://img.shields.io/badge/deploy-Cloudflare%20Workers-orange.svg)
+一个轻量的开源 Markdown 阅读器，让技术文档、AI 笔记和长文更容易阅读。
 
-## ✨ 特性
+## Features / 功能
 
-- 🔗 **URL 读取** - 通过 `?url=https://example.com/readme.md` 直接访问
-- 📁 **文件上传** - 拖拽上传本地 Markdown 文件
-- 📋 **粘贴渲染** - 直接粘贴 Markdown 文本即时预览
-- 📑 **自动生成目录** - 侧边栏目录，点击快速跳转
-- 🎨 **主题切换** - 支持亮色/暗色主题
-- 📱 **响应式设计** - 适配桌面和移动端
-- 🔒 **隐私安全** - 纯前端渲染，内容不上传第三方服务器
-- ⚡ **边缘加速** - Cloudflare Workers 全球 300+ 节点加速
+- Paste Markdown, open `.md` / `.markdown` / `.txt` files, or drag a file anywhere onto the page (maximum 2 MB).
+- Open public raw URLs and GitHub / GitLab / Gitee file pages. Resolve relative links and images against the final source URL.
+- Navigate all six heading levels, including Chinese and repeated headings; original Markdown fragment links are mapped to stable reader anchors.
+- Read highlighted code, copy code blocks, view Mermaid diagrams and native MathML equations. Diagram and math libraries load only when needed.
+- Choose light, dark or system appearance, font size, line spacing and content width. Read comfortably on desktop or mobile.
+- Resume by heading or progress. Recent records stay in the current browser; v1 URL history is retained. No document bodies are persisted.
+- Share public URL documents at the current chapter; print a clean reading layout or save it as PDF through the browser print dialog.
+- Inspect or edit the source of the current document. Edits become local pasted text, avoiding misleading source/share links.
+- Optional feedback and privacy-minimized analytics integrations, **disabled by default**. No author-specific services or credentials are required.
 
-## 🚀 一键部署
+## Quick start
 
-### 前提
-- Cloudflare 账号（免费）
-- 已安装 Node.js
+Requires Node.js 24.15 or later.
 
-### 部署步骤
-
-```bash
-# 1. 进入项目目录
-cd markdown-reader
-
-# 2. 复制配置文件
-cp wrangler.toml.example wrangler.toml
-
-# 3. 编辑 wrangler.toml，修改为你的域名
-# routes = [{ pattern = "markdown.YOUR_DOMAIN.com/*", custom_domain = true }]
-
-# 4. 安装 wrangler 并登录
-npm install -g wrangler
-wrangler login
-
-# 5. 部署
-wrangler deploy
+```sh
+npm ci
+npm run build
+npm run preview
 ```
 
-部署完成后，访问你的域名即可使用！
+Open `http://localhost:8787`. Preview runs the built assets and Worker routes locally using the generic `wrangler.example.toml` configuration.
 
-## 📖 使用方法
+For frontend development, keep that preview running and use `npm run dev` in another terminal. Vite proxies `/api` requests to the local Worker.
 
-### 通过 URL 访问文档
+## Deploy your own copy
 
-```
-https://markdown.chathappy.cn/?url=https://raw.githubusercontent.com/user/repo/main/README.md
-```
+1. Copy `wrangler.example.toml` to `wrangler.toml` (ignored by Git).
+2. Set your Worker name and, optionally, your custom domain in that private file.
+3. Sign in with `npx wrangler login` or supply a Cloudflare API token through your environment.
+4. Run `npm run deploy`.
 
-### 界面操作
+All rendering dependencies are bundled with the site. Visitors do not fetch rendering scripts from external CDNs. Mermaid has larger optional chunks, fetched only when diagrams occur.
 
-| 操作 | 方式 |
-|------|------|
-| 输入 URL | 顶部输入框粘贴链接，回车 |
-| 上传文件 | 点击"上传文件"或拖拽文件到页面 |
-| 粘贴内容 | 首页文本框粘贴 Markdown 后点击"渲染" |
+Example reading link:
 
-### 快捷键
-
-| 快捷键 | 功能 |
-|--------|------|
-| `Ctrl/Cmd + O` | 打开文件选择 |
-| `Ctrl/Cmd + L` | 聚焦到 URL 输入框 |
-
-## 🏗️ 项目结构
-
-```
-markdown-reader/
-├── worker.js               # Cloudflare Worker (前端 + API)
-├── index.html              # 前端页面 (被 worker.js 内嵌)
-├── wrangler.toml.example   # 配置模板
-├── README.md               # 本文件
-└── LICENSE                 # MIT 许可证
+```text
+https://reader.example.com/?url=https%3A%2F%2Fraw.githubusercontent.com%2Fexample%2Fdocs%2Fmain%2FREADME.md
 ```
 
-## 🔧 高级配置
+The existing `?fullscreen=1` parameter remains supported as focus mode.
 
-### 限制可代理的域名
+### URL fetching
 
-编辑 `worker.js`，取消注释以下代码：
+The browser first attempts to fetch the source with no credentials and no referrer. If CORS or a network error prevents this, it uses the same-origin Worker proxy.
 
-```javascript
-const allowedDomains = env.ALLOWED_DOMAINS?.split(',') || [];
-if (allowedDomains.length > 0 && !allowedDomains.includes(parsedUrl.hostname)) {
-  return jsonResponse({ error: 'Domain not allowed' }, 403);
-}
-```
+The proxy permits exact hostnames from `ALLOWED_DOMAINS`. Defaults are `raw.githubusercontent.com`, `github.com`, `gitlab.com` and `gitee.com`; each redirect must also be allowed. Add only sources you trust in your deployment configuration. The allowlist is also the DNS trust boundary; do not allow arbitrary wildcard hosts. Private / IP-literal URLs, credential-bearing URLs and nonstandard ports are rejected. Requests time out and are capped at 2 MB; HTML, media and binary responses are rejected. Proxy responses are not publicly cached.
 
-然后在 `wrangler.toml` 添加：
+GitHub branch names containing slashes are passed through to the raw endpoint; the reader does not query repository metadata. Local relative image files are not uploaded automatically. Markdown-dialect features such as Obsidian wikilinks are not supported.
+
+### Optional analytics and feedback
+
+No analytics are enabled in the open-source defaults. To opt in for **your deployment**, configure these outside Git:
 
 ```toml
 [vars]
-ALLOWED_DOMAINS = "github.com,raw.githubusercontent.com,gitee.com"
+ANALYTICS_ENABLED = "true"
+ANALYTICS_PROJECT = "your-project"
+ANALYTICS_ENDPOINT = "https://metrics.example.com/api/events"
+FEEDBACK_URL = "https://example.com/feedback"
 ```
 
-### 配置自定义域名
+The browser talks only to `/api/analytics`; the Worker forwards a strict, sanitized event schema to the configured endpoint. The endpoint should accept a JSON event with `project`, `type`, `name`, `userId`, `sessionId`, `timestamp`, `url`, `path`, `referrer`, `userAgent` and `metadata`. The page URL is always the reader origin plus `/`, the referrer contains only an origin, and metadata accepts only fixed source/error categories. No document body, title, filename, raw source URL or query string is sent. Never put tokens in the endpoint URL; any future authenticated adapter must attach credentials server-side.
 
-编辑 `wrangler.toml`：
+Supported events are `pageview`, `read_success`, `read_failure`, `read_engaged`, `copy_code`, `share_link`, `print_document` and `return_visit`. Successful rendering is recorded after completion, not when an import button is clicked. Reading engagement requires 30 visible seconds and at least 25% progress. Sample documents, localhost, detected automation, DNT and GPC opt-outs do not produce usage events. `return_visit` is a browser identifier signal, not a verified person or a cohort retention rate.
 
-```toml
-routes = [
-  { pattern = "markdown.chathappy.cn/*", custom_domain = true }
-]
+`GET /api/config` exposes only the enablement flag and the public feedback URL; it never returns the analytics endpoint or project configuration. Update the deployment's privacy notice before enabling analytics and protect your receiving service against abuse. The integration is deliberately replaceable; a fork never reports to the original author's service automatically.
+
+## Privacy
+
+- Pasted text and local files are processed in the browser. Document text is never stored by the reader or its default server.
+- URL mode contacts the document host and may use the deployment's Worker proxy. Remote images contact their source hosts with no referrer.
+- Local reading records contain a content hash, title, safe public URL (query-bearing URLs are omitted), heading, progress and timestamp. Reopen a local file or paste the same text to resume; the body is not saved.
+- Disable recording in Reading Settings or clear the recent list to remove stored records. Sharing query-bearing URLs requires manual review and copying.
+- Source/configuration endpoints and browser-visible assets are public. Environment variables do not make values secret if they are sent to a browser. Keep credentials, private service addresses, personal data, real operational logs and local paths out of public source and release artifacts.
+
+## Validation and contributions
+
+```sh
+npm test
+npm run build
+node scripts/check-release.js
 ```
 
-确保你的域名 DNS 已指向 Cloudflare。
+`npm run check` runs all three. Tests exercise Markdown sanitization, heading links, code/math rendering, record privacy and v1 migration, bounded URL loading, redirect controls and analytics minimization. Browser checks should cover desktop/mobile layouts, history navigation, resume, clipboard, diagrams and printing.
 
-## 📝 API 接口
+The privacy scanner checks release inputs and production assets for credentials and private paths. Operators may add their own sensitive strings to an ignored `.release-private-patterns` file, or set `RELEASE_PRIVATE_PATTERNS_FILE`. Never commit those operator-specific rules.
 
-### 代理获取 Markdown
+Development uses `dev`; `main` is the existing release branch. CI validates changes on both branches. Production deployment is manual (`workflow_dispatch`) and uses a protected `production` environment: store `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and the complete private `WRANGLER_CONFIG` as environment secrets. This keeps custom domains and deployment integrations out of the public repository.
 
-```
-GET /proxy?url=https://example.com/readme.md
-```
+## Project structure
 
-**响应**: 纯文本 Markdown 内容
-
-### 健康检查
-
-```
-GET /health
-```
-
-**响应**:
-```json
-{ "status": "ok", "version": "1.0.0" }
+```text
+index.html                  Accessible home and reader interface
+src/app.js                  Import, navigation and reading controls
+src/renderer.js             Sanitized Markdown, headings, code, math and diagrams
+src/storage.js              Browser-local settings and reading records
+src/document.js             URL normalization and document limits
+src/analytics.js            Optional, minimized usage events
+worker.js                   Assets, bounded proxy and optional analytics relay
+wrangler.example.toml       Generic deployment template
+scripts/check-release.js    Public release privacy check
 ```
 
-## 🤝 贡献
+## License
 
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建分支 (`git checkout -b feature/amazing`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送分支 (`git push origin feature/amazing`)
-5. 创建 Pull Request
-
-## 📄 许可证
-
-[MIT](LICENSE) © Markdown Reader Contributors
-
-## 🙏 致谢
-
-- [Marked](https://marked.js.org/) - Markdown 解析器
-- [highlight.js](https://highlightjs.org/) - 代码高亮
-- [github-markdown-css](https://github.com/sindresorhus/github-markdown-css) - GitHub 风格样式
-- [DOMPurify](https://github.com/cure53/DOMPurify) - XSS 防护
-
----
-
-如果这个项目对你有帮助，欢迎 ⭐ Star 支持！
-# 2026年 3月26日 星期四 19时03分28秒 CST
-# Deploy test 2026年 3月26日 星期四 19时07分41秒 CST
+MIT. Dependency licenses remain with their respective authors. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -1,0 +1,22 @@
+# Copy to wrangler.toml for your own deployment. Never commit personal config.
+name = "markdown-reader"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+# Optional custom domain:
+# routes = [{ pattern = "reader.example.com", custom_domain = true }]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+# Exact hostnames only; each redirect must also be allowed.
+ALLOWED_DOMAINS = "raw.githubusercontent.com,github.com,gitlab.com,gitee.com"
+ANALYTICS_ENABLED = "false"
+# Optional public feedback destination. Leave unset to hide the link.
+# FEEDBACK_URL = "https://example.com/feedback"
+# Use deployment configuration or secrets for optional integrations.
+# ANALYTICS_ENDPOINT = "https://example.com/api/events"
+# ANALYTICS_PROJECT = "your-project"
+# Enable only after documenting analytics in your deployment's privacy notice.
